@@ -6,6 +6,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add controllers
 builder.Services.AddControllers();
 
+// Add Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 // Database connection (SQL Server)
 builder.Services.AddDbContext<LibraryContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -20,6 +24,10 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Enable Swagger ALWAYS (production + development)
+app.UseSwagger();
+app.UseSwaggerUI();
 
 // Enable CORS
 app.UseCors("AllowAll");
