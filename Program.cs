@@ -10,9 +10,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Database connection (SQL Server)
+// Database connection (PostgreSQL)
 builder.Services.AddDbContext<LibraryContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // CORS (allow frontend to call backend)
 builder.Services.AddCors(options =>
