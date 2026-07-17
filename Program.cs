@@ -10,11 +10,11 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Database connection (PostgreSQL)
+// Database connection
 builder.Services.AddDbContext<LibraryContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// CORS (allow frontend to call backend)
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -25,23 +25,19 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Enable Swagger ALWAYS (production + development)
+// Swagger
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Enable CORS
+// CORS
 app.UseCors("AllowAll");
 
-// Redirect HTTP → HTTPS
-app.UseHttpsRedirection();
 
-// Map API controllers
+// app.UseHttpsRedirection();
+
+// Controllers
 app.MapControllers();
 
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<LibraryContext>();
-    db.Database.Migrate();
-}
-
-app.Run();
+//  REQUIRED FOR ALL CLOUD PLATFORMS
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+app.Run($"http://0.0.0.0:{port}");

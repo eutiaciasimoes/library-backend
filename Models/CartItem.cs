@@ -1,7 +1,15 @@
 using System.ComponentModel.DataAnnotations;
-public class CartItem
+
+namespace Backend.Models
 {
-    public int Id { get; set; }
-    public int BookId { get; set; }
-    public int Quantity { get; set; }
+    public class CartItem
+    {
+        public int Id { get; set; }
+
+        public int UserId { get; set; }   // REQUIRED
+
+        public int BookId { get; set; }
+
+        public int Quantity { get; set; }
+    }
 }
