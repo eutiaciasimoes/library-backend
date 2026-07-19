@@ -1,10 +1,12 @@
 using Backend.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
+    [Authorize] // ✔ Requires JWT token
     public class UsersController : ControllerBase
     {
         private readonly LibraryContext _context;
@@ -18,6 +20,28 @@ namespace Backend.Controllers
         public IActionResult GetUsers()
         {
             return Ok(_context.Users.ToList());
+        }
+
+        [HttpGet("{id}")]
+        public IActionResult GetUser(int id)
+        {
+            var user = _context.Users.Find(id);
+            if (user == null) return NotFound();
+
+            return Ok(user);
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")] // ✔ Admin-only
+        public IActionResult DeleteUser(int id)
+        {
+            var user = _context.Users.Find(id);
+            if (user == null) return NotFound();
+
+            _context.Users.Remove(user);
+            _context.SaveChanges();
+
+            return Ok(new { message = "User deleted" });
         }
     }
 }

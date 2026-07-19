@@ -1,12 +1,14 @@
-using Microsoft.AspNetCore.Mvc;
-using Backend.Models;
 using Backend.Data;
-using Microsoft.EntityFrameworkCore;
+using Backend.Models;
+using Backend.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
+    [AllowAnonymous] // ✔ Login/Register must NOT require token
     public class AuthController : ControllerBase
     {
         private readonly LibraryContext _context;
@@ -16,45 +18,47 @@ namespace Backend.Controllers
             _context = context;
         }
 
-        // LOGIN
         [HttpPost("login")]
-        public IActionResult Login(LoginDto dto)
+        public IActionResult Login([FromBody] LoginDto loginDto, [FromServices] JwtService jwtService)
         {
-            var user = _context.Users
-                .FirstOrDefault(x => x.Email == dto.Email && x.Password == dto.Password);
+            var user = _context.Users.FirstOrDefault(u => u.Email == loginDto.Email);
 
             if (user == null)
-                return Unauthorized("Invalid credentials");
+                return Unauthorized(new { message = "Invalid email or password" });
+
+            if (user.Password != loginDto.Password)
+                return Unauthorized(new { message = "Invalid email or password" });
+
+            var token = jwtService.GenerateToken(user.Id, user.Email, user.Role);
 
             return Ok(new
             {
-                FullName = user.FullName,
-                Email = user.Email,
-                Role = user.Role
+                token = token,
+                user = new
+                {
+                    id = user.Id,
+                    name = user.FullName,
+                    email = user.Email,
+                    role = user.Role
+                }
             });
         }
 
-        // REGISTER
         [HttpPost("register")]
-        public IActionResult Register(RegisterDto dto)
+        public IActionResult Register([FromBody] RegisterDto dto)
         {
             var user = new User
             {
-                FullName = dto.Name,
+                FullName = dto.FullName,
                 Email = dto.Email,
-                Password = dto.Password,
-                Role = "Customer"
+                Password = dto.Password, // later we hash
+                Role = "User"
             };
 
             _context.Users.Add(user);
             _context.SaveChanges();
 
-            return Ok(new
-            {
-                FullName = user.FullName,
-                Email = user.Email,
-                Role = user.Role
-            });
+            return Ok(new { message = "User registered successfully" });
         }
     }
 }

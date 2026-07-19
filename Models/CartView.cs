@@ -1,3 +1,5 @@
+using Backend.Models;
+
 namespace LibraryFrontend.Models
 {
     public class CartViewModel

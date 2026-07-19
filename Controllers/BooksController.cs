@@ -1,12 +1,13 @@
 using Backend.Data;
 using Backend.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize] // ✔ Must be logged in
     public class BooksController : ControllerBase
     {
         private readonly LibraryContext _context;
@@ -16,72 +17,55 @@ namespace Backend.Controllers
             _context = context;
         }
 
-        // GET: api/books
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Book>>> GetBooks()
+        public IActionResult GetBooks()
         {
-            return await _context.Books.ToListAsync();
+            return Ok(_context.Books.ToList());
         }
 
-        // GET: api/books/{id}
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Book>> GetBook(int id)
-        {
-            var book = await _context.Books.FindAsync(id);
-
-            if (book == null)
-                return NotFound();
-
-            return book;
-        }
-
-        // POST: api/books
         [HttpPost]
-        public async Task<ActionResult<Book>> CreateBook(Book book)
+        [Authorize(Roles = "Admin")] //  Only Admin can add books
+        public IActionResult AddBook([FromBody] BookDto dto)
         {
+            var book = new Book
+            {
+                Title = dto.Title,
+                Author = dto.Author,
+                Quantity = dto.Quantity
+            };
+
             _context.Books.Add(book);
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
 
-            return CreatedAtAction(nameof(GetBook), new { id = book.Id }, book);
+            return Ok(book);
         }
 
-        // PUT: api/books/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateBook(int id, Book book)
+        [Authorize(Roles = "Admin")] //  Only Admin can update books
+        public IActionResult UpdateBook(int id, [FromBody] BookDto dto)
         {
-            if (id != book.Id)
-                return BadRequest();
+            var book = _context.Books.Find(id);
+            if (book == null) return NotFound();
 
-            _context.Entry(book).State = EntityState.Modified;
+            book.Title = dto.Title;
+            book.Author = dto.Author;
+            book.Quantity = dto.Quantity;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Books.Any(e => e.Id == id))
-                    return NotFound();
-                else
-                    throw;
-            }
-
-            return NoContent();
+            _context.SaveChanges();
+            return Ok(book);
         }
 
-        // DELETE: api/books/{id}
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteBook(int id)
+        [Authorize(Roles = "Admin")] //  Only Admin can delete books
+        public IActionResult DeleteBook(int id)
         {
-            var book = await _context.Books.FindAsync(id);
-
-            if (book == null)
-                return NotFound();
+            var book = _context.Books.Find(id);
+            if (book == null) return NotFound();
 
             _context.Books.Remove(book);
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
 
-            return NoContent();
+            return Ok(new { message = "Book deleted" });
         }
     }
 }
